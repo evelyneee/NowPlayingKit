@@ -1,11 +1,29 @@
 import XCTest
+import Combine
 @testable import NowPlayingKit
 
 final class NowPlayingKitTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(NowPlayingKit().text, "Hello, World!")
+    
+    var kit: NowPlayingKit? = .init()
+    
+    var cancellable: AnyCancellable? = nil
+    
+    @available(macOS 13.0, *)
+    func testSubscription() async throws {
+        print("setup")
+        self.cancellable = self.kit?._registerForNotifications().sink {
+            print($0, "AAAAA")
+        }
+        dump(kit)
+        try await Task.sleep(for: .seconds(20.0))
     }
+    
+    func testNowPlayingInfo() async throws -> Bool {
+        return await withCheckedContinuation { cont in
+            self.kit?.private.getNowPlayingInfo(DispatchQueue.global()) { dict in
+                cont.resume(with: .success(!dict.keys.isEmpty))
+            }
+        }
+    }
+    
 }
